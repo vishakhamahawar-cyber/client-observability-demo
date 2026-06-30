@@ -2,407 +2,430 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vonage Client Observability</title>
-  <script src="https://video.standard.vonage.com/v2/js/opentok.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Vonage Client Observability</title>
+ <script src="https://video.standard.vonage.com/v2/js/opentok.min.js"></script> <!-- using latest sdk -->
+ <style>
+ *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:        #0b0f1a;
-      --surface:   #111827;
-      --surface-2: #1a2235;
-      --border:    #1f2d45;
-      --green:     #10b981;
-      --orange:    #f59e0b;
-      --red:       #ef4444;
-      --text:      #e2e8f0;
-      --muted:     #64748b;
-      --label:     #94a3b8;
-    }
+ :root {
+ --bg: #0b0f1a;
+ --surface: #111827;
+ --surface-2: #1a2235;
+ --border: #1f2d45;
+ --green: #10b981;
+ --orange: #f59e0b;
+ --red: #ef4444;
+ --text: #e2e8f0;
+ --muted: #64748b;
+ --label: #94a3b8;
+ }
 
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 20px;
-      font-size: 0.875rem;
-    }
+ body {
+ font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+ background: var(--bg);
+ color: var(--text);
+ min-height: 100vh;
+ padding: 20px;
+ font-size: 0.875rem;
+ }
 
-    /* ── Header ── */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .header-left h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
-    }
-    .header-left p {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-    .header-badge { display: flex; gap: 8px; align-items: center; }
-    .badge-pill {
-      padding: 3px 10px;
-      border-radius: 4px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
-    }
-    .pill-blue  { background: rgba(26,86,219,0.2);   color: #60a5fa; border: 1px solid rgba(26,86,219,0.3); }
-    .pill-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+ /* ── Header ── */
+ .header {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ margin-bottom: 20px;
+ padding-bottom: 16px;
+ border-bottom: 1px solid var(--border);
+ }
+ .header-left h1 {
+ font-size: 1.25rem;
+ font-weight: 700;
+ color: #fff;
+ letter-spacing: 0.3px;
+ }
+ .header-left p {
+ font-size: 0.75rem;
+ color: var(--muted);
+ margin-top: 3px;
+ }
+ .header-badge { display: flex; gap: 8px; align-items: center; }
+ .badge-pill {
+ padding: 3px 10px;
+ border-radius: 4px;
+ font-size: 0.7rem;
+ font-weight: 600;
+ letter-spacing: 0.3px;
+ text-transform: uppercase;
+ }
+ .pill-blue { background: rgba(26,86,219,0.2); color: #60a5fa; border: 1px solid rgba(26,86,219,0.3); }
+ .pill-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
 
-    /* ── Two-column layout ── */
-    .demo-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
+ /* ── Two-column layout ── */
+ .demo-grid {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 16px;
+ max-width: 1600px;
+ margin: 0 auto;
+ }
 
-    .column { display: flex; flex-direction: column; gap: 10px; }
+ .column { display: flex; flex-direction: column; gap: 10px; }
 
-    /* ── Panel ── */
-    .panel {
-      background: var(--surface);
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-    }
+ /* ── Panel ── */
+ .panel {
+ background: var(--surface);
+ border-radius: 8px;
+ border: 1px solid var(--border);
+ overflow: hidden;
+ }
 
-    .panel-header {
-      background: var(--surface-2);
-      padding: 8px 14px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--label);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-    }
+ .panel-header {
+ background: var(--surface-2);
+ padding: 8px 14px;
+ font-size: 0.75rem;
+ font-weight: 600;
+ letter-spacing: 0.5px;
+ text-transform: uppercase;
+ color: var(--label);
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ border-bottom: 1px solid var(--border);
+ }
 
-    .panel-header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+ .panel-header-left {
+ display: flex;
+ align-items: center;
+ gap: 8px;
+ }
 
-    .status-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--muted);
-    }
-    .status-dot.active {
-      background: var(--green);
-      box-shadow: 0 0 6px rgba(16,185,129,0.5);
-    }
+ .status-dot {
+ width: 7px; height: 7px;
+ border-radius: 50%;
+ background: var(--muted);
+ }
+ .status-dot.active {
+ background: var(--green);
+ box-shadow: 0 0 6px rgba(16,185,129,0.5);
+ }
 
-    /* ── Video wrapper 16:9 ── */
-    .video-wrapper {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%;
-      background: #000;
-    }
-    .video-wrapper > div:not(.video-controls) {
-      position: absolute !important;
-      inset: 0;
-      width: 100% !important;
-      height: 100% !important;
-    }
+ /* ── Video wrapper 16:9 ── */
+ .video-wrapper {
+ position: relative;
+ width: 100%;
+ padding-top: 56.25%;
+ background: #000;
+ }
+ .video-wrapper > div:not(.video-controls) {
+ position: absolute !important;
+ inset: 0;
+ width: 100% !important;
+ height: 100% !important;
+ }
 
-    /* ── Video controls overlay ── */
-    .video-controls {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
-      display: flex;
-      gap: 8px;
-      z-index: 10;
-    }
-    .video-controls button {
-      padding: 5px 14px;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      letter-spacing: 0.3px;
-    }
-    .video-controls button:hover { opacity: 0.85; }
-    #publish-video-true  { background: rgba(16,185,129,0.9); color: #000; display: none; }
-    #publish-video-false { background: rgba(239,68,68,0.9);  color: #fff; }
+ /* ── Video controls overlay ── */
+ .video-controls {
+ position: absolute;
+ bottom: 12px;
+ right: 12px;
+ display: flex;
+ gap: 8px;
+ z-index: 10;
+ }
+ .video-controls button {
+ padding: 5px 14px;
+ border: none;
+ border-radius: 4px;
+ font-size: 0.72rem;
+ font-weight: 600;
+ cursor: pointer;
+ transition: opacity 0.2s;
+ letter-spacing: 0.3px;
+ }
+ .video-controls button:hover { opacity: 0.85; }
+ #publish-video-true { background: rgba(16,185,129,0.9); color: #000; display: none; }
+ #publish-video-false { background: rgba(239,68,68,0.9); color: #fff; }
 
-    /* ── Condition banner ── */
-    .condition-banner {
-      display: none;
-      padding: 7px 14px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-      border-radius: 6px;
-    }
-    .condition-banner.warning  { display: block; background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-left: 3px solid #f59e0b; }
-    .condition-banner.critical { display: block; background: rgba(239,68,68,0.1);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3);  border-left: 3px solid #ef4444; }
+ /* ── Condition banner ── */
+ .condition-banner {
+ display: none;
+ padding: 7px 14px;
+ font-size: 0.75rem;
+ font-weight: 600;
+ letter-spacing: 0.3px;
+ border-radius: 6px;
+ }
+ .condition-banner.warning  { display: block; background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-left: 3px solid #f59e0b; }
+ .condition-banner.critical { display: block; background: rgba(239,68,68,0.1);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3);  border-left: 3px solid #ef4444; }
+ .condition-banner.serious  { display: block; background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-left: 3px solid #f59e0b; }
 
-    /* ── Stats grid ── */
+ /* ── Stats grid ── */
 
-    /* Publisher: 3 columns — Audio | Video | Network */
-    .stats-columns-pub {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-    }
+ /* Publisher: 3 columns — Audio | Video | Network */
+ .stats-columns-pub {
+ display: grid;
+ grid-template-columns: 1fr 1fr 1fr;
+ }
 
-    /* Subscriber: 4 columns — Audio | Video | Sender-Side | Network */
-    .stats-columns-sub {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
+ /* Subscriber: 4 columns — Audio | Video | Sender-Side | Network */
+ .stats-columns-sub {
+ display: grid;
+ grid-template-columns: 1fr 1fr 1fr 1fr;
+ }
 
-    .stats-section {
-      padding: 10px 12px;
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      max-height: 260px;
-    }
-    .stats-section:last-child { border-right: none; }
+ .stats-section {
+ padding: 10px 12px;
+ border-right: 1px solid var(--border);
+ overflow-y: auto;
+ max-height: 260px;
+ }
+ .stats-section:last-child { border-right: none; }
 
-    .stats-section h3 {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      background: var(--surface);
-      z-index: 1;
-      font-weight: 700;
-    }
+ .stats-section h3 {
+ font-size: 0.65rem;
+ text-transform: uppercase;
+ letter-spacing: 1px;
+ color: var(--muted);
+ margin-bottom: 8px;
+ padding-bottom: 6px;
+ border-bottom: 1px solid var(--border);
+ position: sticky;
+ top: 0;
+ background: var(--surface);
+ z-index: 1;
+ font-weight: 700;
+ }
 
-    /* ── Stat rows ── */
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0;
-      font-size: 0.72rem;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-      gap: 8px;
-    }
-    .stat-row:last-child { border-bottom: none; }
+ /* ── Stat rows ── */
+ .stat-row {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ padding: 4px 0;
+ font-size: 0.72rem;
+ border-bottom: 1px solid rgba(255,255,255,0.03);
+ gap: 8px;
+ }
+ .stat-row:last-child { border-bottom: none; }
 
-    .stat-label {
-      color: var(--label);
-      flex: 1;
-      line-height: 1.4;
-    }
-    .stat-value {
-      color: #fff;
-      font-weight: 500;
-      font-family: 'Courier New', monospace;
-      font-size: 0.7rem;
-      text-align: right;
-    }
+ .stat-label {
+ color: var(--label);
+ flex: 1;
+ line-height: 1.4;
+ }
+ .stat-value {
+ color: #fff;
+ font-weight: 500;
+ font-family: 'Courier New', monospace;
+ font-size: 0.7rem;
+ text-align: right;
+ }
 
-    /* ── Sub-headings inside network section ── */
-    .sub-heading {
-      font-size: 0.62rem;
-      color: var(--muted);
-      margin: 10px 0 4px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 700;
-      padding-bottom: 3px;
-      border-bottom: 1px solid var(--border);
-    }
-    .sub-heading:first-child { margin-top: 0; }
+ /* ── Sub-headings inside network section ── */
+ .sub-heading {
+ font-size: 0.62rem;
+ color: var(--muted);
+ margin: 10px 0 4px;
+ text-transform: uppercase;
+ letter-spacing: 1px;
+ font-weight: 700;
+ padding-bottom: 3px;
+ border-bottom: 1px solid var(--border);
+ }
+ .sub-heading:first-child { margin-top: 0; }
 
-    /* ── Condition badges ── */
-    .badge {
-      display: inline-block;
-      padding: 1px 7px;
-      border-radius: 3px;
-      font-size: 0.62rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .badge-excellent   { background: rgba(16,185,129,0.15);  color: #10b981; }
-    .badge-good        { background: rgba(16,185,129,0.15);  color: #10b981; }
-    .badge-fair        { background: rgba(245,158,11,0.15);  color: #f59e0b; }
-    .badge-warning     { background: rgba(239,68,68,0.15);   color: #ef4444; }
-    .badge-critical    { background: rgba(185,28,28,0.2);    color: #fca5a5; }
-    .badge-unknown     { background: rgba(100,116,139,0.15); color: #94a3b8; }
-    .badge-none        { background: rgba(16,185,129,0.15);  color: #10b981; }
-    .badge-local       { background: rgba(245,158,11,0.15);  color: #f59e0b; }
-    .badge-remote      { background: rgba(239,68,68,0.15);   color: #ef4444; }
-    .badge-both        { background: rgba(185,28,28,0.2);    color: #fca5a5; }
-    .badge-bandwidth   { background: rgba(245,158,11,0.15);  color: #f59e0b; }
-    .badge-packet-loss { background: rgba(239,68,68,0.15);   color: #ef4444; }
+ /* ── Condition badges ── */
+ .badge {
+ display: inline-block;
+ padding: 1px 7px;
+ border-radius: 3px;
+ font-size: 0.62rem;
+ font-weight: 700;
+ text-transform: uppercase;
+ letter-spacing: 0.3px;
+ }
+ .badge-excellent   { background: rgba(16,185,129,0.15);  color: #10b981; }
+ .badge-good        { background: rgba(16,185,129,0.15);  color: #10b981; }
+ .badge-fair        { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+ .badge-warning     { background: rgba(239,68,68,0.15);   color: #ef4444; }
+ .badge-critical    { background: rgba(185,28,28,0.2);    color: #fca5a5; }
+ .badge-unknown     { background: rgba(100,116,139,0.15); color: #94a3b8; }
+ .badge-none        { background: rgba(16,185,129,0.15);  color: #10b981; }
+ .badge-local       { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+ .badge-remote      { background: rgba(239,68,68,0.15);   color: #ef4444; }
+ .badge-both        { background: rgba(185,28,28,0.2);    color: #fca5a5; }
+ .badge-bandwidth   { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+ .badge-packet-loss { background: rgba(239,68,68,0.15);   color: #ef4444; }
+ /* CPU performance state badges */
+ .badge-nominal     { background: rgba(16,185,129,0.15);  color: #10b981; }
+ .badge-serious     { background: rgba(245,158,11,0.15);  color: #f59e0b; }
 
-    /* ── Placeholder ── */
-    .no-stats {
-      color: var(--muted);
-      font-size: 0.72rem;
-      text-align: center;
-      padding: 20px 0;
-    }
+ /* ── Placeholder ── */
+ .no-stats {
+ color: var(--muted);
+ font-size: 0.72rem;
+ text-align: center;
+ padding: 20px 0;
+ }
 
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-  </style>
+ /* ── Scrollbar ── */
+ ::-webkit-scrollbar { width: 3px; }
+ ::-webkit-scrollbar-track { background: transparent; }
+ ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+ </style>
 </head>
 <body>
 
-  <!-- ── Header ── -->
-  <div class="header">
-    <div class="header-left">
-      <h1>Vonage Client Observability</h1>
-      <p>Real-time publisher &amp; subscriber telemetry — High-Level API + Network Condition API</p>
-    </div>
-    <div class="header-badge">
-      <span class="badge-pill pill-blue">SDK 2.33+</span>
-      <span class="badge-pill pill-green">Live</span>
-    </div>
-  </div>
+ <!-- ── Header ── -->
+ <div class="header">
+ <div class="header-left">
+ <h1>Vonage Client Observability</h1>
+ <p>Real-time publisher &amp; subscriber telemetry — High-Level API + Network Condition API</p>
+ </div>
+ <div class="header-badge">
+ <span class="badge-pill pill-blue">SDK 2.33+</span>
+ <span class="badge-pill pill-green">Live</span>
+ </div>
+ </div>
 
-  <div class="demo-grid">
+ <div class="demo-grid">
 
-    <!-- ══════════════════════════════════════════
-         PUBLISHER COLUMN
-    ══════════════════════════════════════════ -->
-    <div class="column">
+ <!-- ══════════════════════════════════════════
+ PUBLISHER COLUMN
+ ══════════════════════════════════════════ -->
+ <div class="column">
 
-      <!-- Publisher video -->
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <span class="status-dot active"></span>
-            Publisher — Local
-          </div>
-        </div>
-        <div class="video-wrapper">
-          <div id="publisher"></div>
-          <div class="video-controls">
-            <button id="publish-video-true">Enable Video</button>
-            <button id="publish-video-false">Disable Video</button>
-          </div>
-        </div>
-      </div>
+ <!-- Publisher video -->
+ <div class="panel">
+ <div class="panel-header">
+ <div class="panel-header-left">
+ <span class="status-dot active"></span>
+ Publisher — Local
+ </div>
+ </div>
+ <div class="video-wrapper">
+ <div id="publisher"></div>
+ <div class="video-controls">
+ <button id="publish-video-true">Enable Video</button>
+ <button id="publish-video-false">Disable Video</button>
+ </div>
+ </div>
+ </div>
 
-      <!-- Publisher condition banner -->
-      <div id="pub-condition-banner" class="condition-banner"></div>
+ <!-- Publisher condition banner -->
+ <div id="pub-condition-banner" class="condition-banner"></div>
 
-      <!-- Publisher stats: Audio | Video | Network Condition -->
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <span class="status-dot active"></span>
-            Publisher Statistics
-          </div>
-        </div>
-        <div class="stats-columns-pub">
+ <!-- Publisher stats: Audio | Video | Network Condition -->
+ <div class="panel">
+ <div class="panel-header">
+ <div class="panel-header-left">
+ <span class="status-dot active"></span>
+ Publisher Statistics
+ </div>
+ </div>
+ <div class="stats-columns-pub">
 
-          <div class="stats-section">
-            <h3>Audio</h3>
-            <div id="pub-audio-stats"><p class="no-stats">Waiting...</p></div>
-          </div>
+ <div class="stats-section">
+ <h3>Audio</h3>
+ <div id="pub-audio-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
 
-          <div class="stats-section">
-            <h3>Video</h3>
-            <div id="pub-video-stats"><p class="no-stats">Waiting...</p></div>
-          </div>
+ <div class="stats-section">
+ <h3>Video</h3>
+ <div id="pub-video-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
 
-          <div class="stats-section">
-            <h3>Network Condition</h3>
-            <div id="pub-network-stats"><p class="no-stats">Waiting...</p></div>
-          </div>
+ <div class="stats-section">
+ <h3>Network Condition</h3>
+ <div id="pub-network-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
 
-        </div>
-      </div>
+ </div>
+ </div>
 
-    </div><!-- /publisher column -->
+ <!-- CPU Performance — session-level event, shown in publisher column -->
+ <div id="cpu-condition-banner" class="condition-banner"></div>
 
-    <!-- ══════════════════════════════════════════
-         SUBSCRIBER COLUMN
-    ══════════════════════════════════════════ -->
-    <div class="column">
+ <div class="panel">
+ <div class="panel-header">
+ <div class="panel-header-left">
+ <span class="status-dot active"></span>
+ CPU Performance
+ <span style="font-size:0.65rem; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0;">— Chromium only (Chrome 125+, Edge 125+, Opera 111+)</span>
+ </div>
+ </div>
+ <div class="stats-columns-pub" style="grid-template-columns: 1fr;">
+ <div class="stats-section">
+ <h3>Device CPU State</h3>
+ <div id="cpu-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
+ </div>
+ </div>
 
-      <!-- Subscriber video -->
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <span class="status-dot"></span>
-            Subscriber — Remote
-          </div>
-        </div>
-        <div class="video-wrapper">
-          <div id="subscriber"></div>
-        </div>
-      </div>
+ </div><!-- /publisher column -->
 
-      <!-- Subscriber condition banner -->
-      <div id="sub-condition-banner" class="condition-banner"></div>
+ <!-- ══════════════════════════════════════════
+ SUBSCRIBER COLUMN
+ ══════════════════════════════════════════ -->
+ <div class="column">
 
-      <!-- Subscriber stats: Audio | Video | Sender-Side | Network Condition -->
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <span class="status-dot"></span>
-            Subscriber Statistics
-          </div>
-        </div>
-        <div class="stats-columns-sub">
+ <!-- Subscriber video -->
+ <div class="panel">
+ <div class="panel-header">
+ <div class="panel-header-left">
+ <span id="sub-status-dot" class="status-dot"></span>
+ Subscriber — Remote
+ </div>
+ </div>
+ <div class="video-wrapper">
+ <div id="subscriber"></div>
+ </div>
+ </div>
 
-          <div class="stats-section">
-            <h3>Audio</h3>
-            <div id="sub-audio-stats"><p class="no-stats">Waiting...</p></div>
-          </div>
+ <!-- Subscriber condition banner -->
+ <div id="sub-condition-banner" class="condition-banner"></div>
 
-          <div class="stats-section">
-            <h3>Video</h3>
-            <div id="sub-video-stats"><p class="no-stats">Waiting...</p></div>
-          </div>
+ <!-- Subscriber stats: Audio | Video | Sender-Side | Network Condition -->
+ <div class="panel">
+ <div class="panel-header">
+ <div class="panel-header-left">
+ <span class="status-dot"></span>
+ Subscriber Statistics
+ </div>
+ </div>
+ <div class="stats-columns-sub">
 
-          <div class="stats-section">
-            <h3>Sender-Side</h3>
-            <div id="sub-sender-stats"><p class="no-stats">Waiting...</p></div>
-          </div>
+ <div class="stats-section">
+ <h3>Audio</h3>
+ <div id="sub-audio-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
 
-          <div class="stats-section">
-            <h3>Network Condition</h3>
-            <div id="sub-network-stats"><p class="no-stats">Waiting...</p></div>
-          </div>
+ <div class="stats-section">
+ <h3>Video</h3>
+ <div id="sub-video-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
 
-        </div>
-      </div>
+ <div class="stats-section">
+ <h3>Sender-Side</h3>
+ <div id="sub-sender-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
 
-    </div><!-- /subscriber column -->
+ <div class="stats-section">
+ <h3>Network Condition</h3>
+ <div id="sub-network-stats"><p class="no-stats">Waiting...</p></div>
+ </div>
 
-  </div><!-- /demo-grid -->
+ </div>
+ </div>
 
-  <script type="text/javascript" src="js/config.js"></script>
-  <script type="text/javascript" src="js/app.js"></script>
+ </div><!-- /subscriber column -->
+
+ </div><!-- /demo-grid -->
+
+ <script type="text/javascript" src="js/config.js"></script>
+ <script type="text/javascript" src="js/app.js"></script>
 </body>
 </html>

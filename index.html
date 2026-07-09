@@ -2,430 +2,407 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Vonage Client Observability</title>
- <script src="https://video.standard.vonage.com/v2/js/opentok.min.js"></script> <!-- using latest sdk -->
- <style>
- *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vonage Client Observability</title>
+  <script src="https://video.standard.vonage.com/v2/js/opentok.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
- :root {
- --bg: #0b0f1a;
- --surface: #111827;
- --surface-2: #1a2235;
- --border: #1f2d45;
- --green: #10b981;
- --orange: #f59e0b;
- --red: #ef4444;
- --text: #e2e8f0;
- --muted: #64748b;
- --label: #94a3b8;
- }
+    html, body { height: 100%; overflow: hidden; }
 
- body {
- font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
- background: var(--bg);
- color: var(--text);
- min-height: 100vh;
- padding: 20px;
- font-size: 0.875rem;
- }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: gray;
+      color: #111;
+      font-size: 0.875rem;
+      display: flex;
+      flex-direction: column;
+    }
 
- /* ── Header ── */
- .header {
- display: flex;
- align-items: center;
- justify-content: space-between;
- margin-bottom: 20px;
- padding-bottom: 16px;
- border-bottom: 1px solid var(--border);
- }
- .header-left h1 {
- font-size: 1.25rem;
- font-weight: 700;
- color: #fff;
- letter-spacing: 0.3px;
- }
- .header-left p {
- font-size: 0.75rem;
- color: var(--muted);
- margin-top: 3px;
- }
- .header-badge { display: flex; gap: 8px; align-items: center; }
- .badge-pill {
- padding: 3px 10px;
- border-radius: 4px;
- font-size: 0.7rem;
- font-weight: 600;
- letter-spacing: 0.3px;
- text-transform: uppercase;
- }
- .pill-blue { background: rgba(26,86,219,0.2); color: #60a5fa; border: 1px solid rgba(26,86,219,0.3); }
- .pill-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+    /* ── Header — Get Stats button only ── */
+    .header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 8px 16px;
+      background: #000;
+      z-index: 10;
+    }
 
- /* ── Two-column layout ── */
- .demo-grid {
- display: grid;
- grid-template-columns: 1fr 1fr;
- gap: 16px;
- max-width: 1600px;
- margin: 0 auto;
- }
+    /* ── Get Stats button ── */
+    #stats-toggle-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border: 1px solid #444;
+      border-radius: 5px; background: #1a1a1a;
+      color: #e2e8f0; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+      letter-spacing: 0.3px; font-family: Arial, Helvetica, sans-serif;
+    }
+    #stats-toggle-btn:hover { background: #2a2a2a; border-color: #666; }
+    #stats-toggle-btn .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #666;
+      transition: background 0.2s;
+    }
+    #stats-toggle-btn.active .dot {
+      background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,0.6);
+    }
 
- .column { display: flex; flex-direction: column; gap: 10px; }
+    /* ── Main video area ── */
+    .video-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: gray;
+    }
 
- /* ── Panel ── */
- .panel {
- background: var(--surface);
- border-radius: 8px;
- border: 1px solid var(--border);
- overflow: hidden;
- }
+    /* Subscriber — full screen */
+    #subscriber {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 10;
+    }
 
- .panel-header {
- background: var(--surface-2);
- padding: 8px 14px;
- font-size: 0.75rem;
- font-weight: 600;
- letter-spacing: 0.5px;
- text-transform: uppercase;
- color: var(--label);
- display: flex;
- align-items: center;
- justify-content: space-between;
- border-bottom: 1px solid var(--border);
- }
+    /* Waiting placeholder */
+    .waiting-msg {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; color: #fff; font-size: 0.8rem;
+      pointer-events: none; z-index: 1;
+    }
+    .waiting-msg svg { opacity: 0.4; }
+    .waiting-msg.hidden { display: none; }
 
- .panel-header-left {
- display: flex;
- align-items: center;
- gap: 8px;
- }
+    /* Publisher — PiP bottom-left, matching Vonage sample style */
+    #publisher {
+      position: absolute;
+      bottom: 10px; left: 10px;
+      width: 360px; height: 240px;
+      border: 3px solid white;
+      border-radius: 3px;
+      z-index: 100;
+      background: #000;
+    }
 
- .status-dot {
- width: 7px; height: 7px;
- border-radius: 50%;
- background: var(--muted);
- }
- .status-dot.active {
- background: var(--green);
- box-shadow: 0 0 6px rgba(16,185,129,0.5);
- }
+    /* ── Condition banners — float top of video ── */
+    .banners-overlay {
+      position: absolute;
+      top: 12px; left: 12px; right: 12px;
+      display: flex; flex-direction: column; gap: 6px;
+      z-index: 20; pointer-events: none;
+    }
+    .condition-banner {
+      display: none;
+      padding: 6px 12px; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.3px; border-radius: 5px; pointer-events: auto;
+    }
+    .condition-banner.warning  { display: block; background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.4); border-left: 3px solid #f59e0b; }
+    .condition-banner.critical { display: block; background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.4);  border-left: 3px solid #ef4444; }
+    .condition-banner.serious  { display: block; background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.4); border-left: 3px solid #f59e0b; }
 
- /* ── Video wrapper 16:9 ── */
- .video-wrapper {
- position: relative;
- width: 100%;
- padding-top: 56.25%;
- background: #000;
- }
- .video-wrapper > div:not(.video-controls) {
- position: absolute !important;
- inset: 0;
- width: 100% !important;
- height: 100% !important;
- }
+    /* ── Video controls — inside publisher PiP ── */
+    .video-controls {
+      position: absolute;
+      bottom: 13px; left: 10px;
+      display: flex; gap: 8px; z-index: 110;
+    }
+    .video-controls button {
+      padding: 4px 10px; border: none; border-radius: 4px;
+      font-size: 0.65rem; font-weight: 600; cursor: pointer;
+      transition: opacity 0.2s; letter-spacing: 0.3px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .video-controls button:hover { opacity: 0.85; }
+    #publish-video-true  { background: rgba(16,185,129,0.9); color: #000; display: none; }
+    #publish-video-false { background: rgba(239,68,68,0.9);  color: #fff; }
 
- /* ── Video controls overlay ── */
- .video-controls {
- position: absolute;
- bottom: 12px;
- right: 12px;
- display: flex;
- gap: 8px;
- z-index: 10;
- }
- .video-controls button {
- padding: 5px 14px;
- border: none;
- border-radius: 4px;
- font-size: 0.72rem;
- font-weight: 600;
- cursor: pointer;
- transition: opacity 0.2s;
- letter-spacing: 0.3px;
- }
- .video-controls button:hover { opacity: 0.85; }
- #publish-video-true { background: rgba(16,185,129,0.9); color: #000; display: none; }
- #publish-video-false { background: rgba(239,68,68,0.9); color: #fff; }
+    /* ══════════════════════════════════════════
+       STATS DRAWER — slides up from bottom
+    ══════════════════════════════════════════ */
+    .stats-drawer {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 300px;
+      background: #fff;
+      border-top: 2px solid #ccc;
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      z-index: 200;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .stats-drawer.open { transform: translateY(0); }
 
- /* ── Condition banner ── */
- .condition-banner {
- display: none;
- padding: 7px 14px;
- font-size: 0.75rem;
- font-weight: 600;
- letter-spacing: 0.3px;
- border-radius: 6px;
- }
- .condition-banner.warning  { display: block; background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-left: 3px solid #f59e0b; }
- .condition-banner.critical { display: block; background: rgba(239,68,68,0.1);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3);  border-left: 3px solid #ef4444; }
- .condition-banner.serious  { display: block; background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-left: 3px solid #f59e0b; }
+    /* Drawer header */
+    .drawer-header {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 16px;
+      background: #000;
+      border-bottom: 1px solid #333;
+    }
+    .drawer-header-left { display: flex; align-items: center; gap: 14px; }
+    .drawer-title {
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.6px; color: #94a3b8;
+    }
 
- /* ── Stats grid ── */
+    /* Tab bar */
+    .drawer-tabs { display: flex; gap: 3px; }
+    .drawer-tab {
+      padding: 3px 12px; border-radius: 4px; border: none;
+      background: transparent; color: #64748b;
+      font-size: 0.67rem; font-weight: 600; cursor: pointer;
+      text-transform: uppercase; letter-spacing: 0.4px;
+      transition: background 0.15s, color 0.15s;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .drawer-tab:hover  { background: #1a1a1a; color: #e2e8f0; }
+    .drawer-tab.active { background: #1a1a1a; color: #fff; }
 
- /* Publisher: 3 columns — Audio | Video | Network */
- .stats-columns-pub {
- display: grid;
- grid-template-columns: 1fr 1fr 1fr;
- }
+    /* Close button */
+    .drawer-close {
+      background: none; border: none; color: #64748b;
+      font-size: 1rem; cursor: pointer; padding: 2px 6px;
+      border-radius: 3px; line-height: 1;
+    }
+    .drawer-close:hover { color: #fff; background: #1a1a1a; }
 
- /* Subscriber: 4 columns — Audio | Video | Sender-Side | Network */
- .stats-columns-sub {
- display: grid;
- grid-template-columns: 1fr 1fr 1fr 1fr;
- }
+    /* Drawer body */
+    .drawer-body { flex: 1; overflow: hidden; position: relative; background: #fff; }
+    .tab-panel   { display: none; height: 100%; }
+    .tab-panel.active { display: block; }
 
- .stats-section {
- padding: 10px 12px;
- border-right: 1px solid var(--border);
- overflow-y: auto;
- max-height: 260px;
- }
- .stats-section:last-child { border-right: none; }
+    /* Stats grid inside panels */
+    .stats-grid { display: grid; height: 100%; }
+    .stats-grid-pub { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .stats-grid-sub { grid-template-columns: 1fr 1fr 1fr 1fr; }
 
- .stats-section h3 {
- font-size: 0.65rem;
- text-transform: uppercase;
- letter-spacing: 1px;
- color: var(--muted);
- margin-bottom: 8px;
- padding-bottom: 6px;
- border-bottom: 1px solid var(--border);
- position: sticky;
- top: 0;
- background: var(--surface);
- z-index: 1;
- font-weight: 700;
- }
+    .stats-section {
+      padding: 10px 12px;
+      border-right: 1px solid #e2e8f0;
+      overflow-y: auto;
+    }
+    .stats-section:last-child { border-right: none; }
 
- /* ── Stat rows ── */
- .stat-row {
- display: flex;
- justify-content: space-between;
- align-items: center;
- padding: 4px 0;
- font-size: 0.72rem;
- border-bottom: 1px solid rgba(255,255,255,0.03);
- gap: 8px;
- }
- .stat-row:last-child { border-bottom: none; }
+    .stats-section h3 {
+      font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px;
+      color: #64748b; margin-bottom: 8px; padding-bottom: 5px;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky; top: 0;
+      background: #fff; z-index: 1; font-weight: 700;
+    }
 
- .stat-label {
- color: var(--label);
- flex: 1;
- line-height: 1.4;
- }
- .stat-value {
- color: #fff;
- font-weight: 500;
- font-family: 'Courier New', monospace;
- font-size: 0.7rem;
- text-align: right;
- }
+    /* Stat rows */
+    .stat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 3px 0; font-size: 0.7rem;
+      border-bottom: 1px solid #f1f5f9; gap: 8px;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: #475569; flex: 1; line-height: 1.4; }
+    .stat-value {
+      color: #111; font-weight: 600;
+      font-family: 'Courier New', monospace; font-size: 0.68rem; text-align: right;
+    }
+    .sub-heading {
+      font-size: 0.6rem; color: #94a3b8; margin: 8px 0 3px;
+      text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+      padding-bottom: 3px; border-bottom: 1px solid #e2e8f0;
+    }
+    .sub-heading:first-child { margin-top: 0; }
 
- /* ── Sub-headings inside network section ── */
- .sub-heading {
- font-size: 0.62rem;
- color: var(--muted);
- margin: 10px 0 4px;
- text-transform: uppercase;
- letter-spacing: 1px;
- font-weight: 700;
- padding-bottom: 3px;
- border-bottom: 1px solid var(--border);
- }
- .sub-heading:first-child { margin-top: 0; }
+    /* Badges */
+    .badge {
+      display: inline-block; padding: 1px 6px; border-radius: 3px;
+      font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .badge-excellent   { background: #dcfce7; color: #15803d; }
+    .badge-good        { background: #dcfce7; color: #15803d; }
+    .badge-fair        { background: #fef9c3; color: #a16207; }
+    .badge-warning     { background: #ffedd5; color: #c2410c; }
+    .badge-critical    { background: #fee2e2; color: #b91c1c; }
+    .badge-unknown     { background: #f1f5f9; color: #64748b; }
+    .badge-none        { background: #dcfce7; color: #15803d; }
+    .badge-local       { background: #ffedd5; color: #c2410c; }
+    .badge-remote      { background: #fee2e2; color: #b91c1c; }
+    .badge-both        { background: #fee2e2; color: #b91c1c; }
+    .badge-bandwidth   { background: #fef9c3; color: #a16207; }
+    .badge-packet-loss { background: #fee2e2; color: #b91c1c; }
+    .badge-nominal     { background: #dcfce7; color: #15803d; }
+    .badge-serious     { background: #ffedd5; color: #c2410c; }
 
- /* ── Condition badges ── */
- .badge {
- display: inline-block;
- padding: 1px 7px;
- border-radius: 3px;
- font-size: 0.62rem;
- font-weight: 700;
- text-transform: uppercase;
- letter-spacing: 0.3px;
- }
- .badge-excellent   { background: rgba(16,185,129,0.15);  color: #10b981; }
- .badge-good        { background: rgba(16,185,129,0.15);  color: #10b981; }
- .badge-fair        { background: rgba(245,158,11,0.15);  color: #f59e0b; }
- .badge-warning     { background: rgba(239,68,68,0.15);   color: #ef4444; }
- .badge-critical    { background: rgba(185,28,28,0.2);    color: #fca5a5; }
- .badge-unknown     { background: rgba(100,116,139,0.15); color: #94a3b8; }
- .badge-none        { background: rgba(16,185,129,0.15);  color: #10b981; }
- .badge-local       { background: rgba(245,158,11,0.15);  color: #f59e0b; }
- .badge-remote      { background: rgba(239,68,68,0.15);   color: #ef4444; }
- .badge-both        { background: rgba(185,28,28,0.2);    color: #fca5a5; }
- .badge-bandwidth   { background: rgba(245,158,11,0.15);  color: #f59e0b; }
- .badge-packet-loss { background: rgba(239,68,68,0.15);   color: #ef4444; }
- /* CPU performance state badges */
- .badge-nominal     { background: rgba(16,185,129,0.15);  color: #10b981; }
- .badge-serious     { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+    /* Placeholder */
+    .no-stats { color: #94a3b8; font-size: 0.7rem; text-align: center; padding: 16px 0; }
 
- /* ── Placeholder ── */
- .no-stats {
- color: var(--muted);
- font-size: 0.72rem;
- text-align: center;
- padding: 20px 0;
- }
-
- /* ── Scrollbar ── */
- ::-webkit-scrollbar { width: 3px; }
- ::-webkit-scrollbar-track { background: transparent; }
- ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
- </style>
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
 </head>
 <body>
 
- <!-- ── Header ── -->
- <div class="header">
- <div class="header-left">
- <h1>Vonage Client Observability</h1>
- <p>Real-time publisher &amp; subscriber telemetry — High-Level API + Network Condition API</p>
- </div>
- <div class="header-badge">
- <span class="badge-pill pill-blue">SDK 2.33+</span>
- <span class="badge-pill pill-green">Live</span>
- </div>
- </div>
+  <!-- ── Header — Get Stats button only ── -->
+  <div class="header">
+    <button id="stats-toggle-btn">
+      <span class="dot"></span>
+      Get Stats
+    </button>
+  </div>
 
- <div class="demo-grid">
+  <!-- ── Main video area ── -->
+  <div class="video-area">
 
- <!-- ══════════════════════════════════════════
- PUBLISHER COLUMN
- ══════════════════════════════════════════ -->
- <div class="column">
+    <!-- Subscriber — full screen -->
+    <div id="subscriber"></div>
 
- <!-- Publisher video -->
- <div class="panel">
- <div class="panel-header">
- <div class="panel-header-left">
- <span class="status-dot active"></span>
- Publisher — Local
- </div>
- </div>
- <div class="video-wrapper">
- <div id="publisher"></div>
- <div class="video-controls">
- <button id="publish-video-true">Enable Video</button>
- <button id="publish-video-false">Disable Video</button>
- </div>
- </div>
- </div>
+    <!-- Waiting placeholder -->
+    <div class="waiting-msg" id="waiting-msg">
+      <svg width="52" height="52" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="1">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+      </svg>
+      Waiting for remote participant...
+    </div>
 
- <!-- Publisher condition banner -->
- <div id="pub-condition-banner" class="condition-banner"></div>
+    <!-- Publisher — PiP bottom-left (Vonage sample style) -->
+    <div id="publisher"></div>
 
- <!-- Publisher stats: Audio | Video | Network Condition -->
- <div class="panel">
- <div class="panel-header">
- <div class="panel-header-left">
- <span class="status-dot active"></span>
- Publisher Statistics
- </div>
- </div>
- <div class="stats-columns-pub">
+    <!-- Disable/Enable video — overlaid inside publisher PiP -->
+    <div class="video-controls">
+      <button id="publish-video-true">Enable Video</button>
+      <button id="publish-video-false">Disable Video</button>
+    </div>
 
- <div class="stats-section">
- <h3>Audio</h3>
- <div id="pub-audio-stats"><p class="no-stats">Waiting...</p></div>
- </div>
+    <!-- Condition banners overlay -->
+    <div class="banners-overlay">
+      <div id="pub-condition-banner" class="condition-banner"></div>
+      <div id="sub-condition-banner" class="condition-banner"></div>
+      <div id="cpu-condition-banner" class="condition-banner"></div>
+    </div>
 
- <div class="stats-section">
- <h3>Video</h3>
- <div id="pub-video-stats"><p class="no-stats">Waiting...</p></div>
- </div>
+    <!-- ══════════════════════════════════════════
+         STATS DRAWER — slides up on "Get Stats"
+    ══════════════════════════════════════════ -->
+    <div class="stats-drawer" id="stats-drawer">
 
- <div class="stats-section">
- <h3>Network Condition</h3>
- <div id="pub-network-stats"><p class="no-stats">Waiting...</p></div>
- </div>
+      <div class="drawer-header">
+        <div class="drawer-header-left">
+          <div class="drawer-tabs">
+            <button class="drawer-tab active" data-tab="pub">Publisher Stats</button>
+            <button class="drawer-tab" data-tab="sub">Subscriber Stats</button>
+            <button class="drawer-tab" data-tab="sender">Sender-Side Stats</button>
+          </div>
+        </div>
+        <button class="drawer-close" id="drawer-close-btn" title="Close">✕</button>
+      </div>
 
- </div>
- </div>
+      <div class="drawer-body">
 
- <!-- CPU Performance — session-level event, shown in publisher column -->
- <div id="cpu-condition-banner" class="condition-banner"></div>
+        <!-- Publisher Stats tab -->
+        <div class="tab-panel active" id="tab-pub">
+          <div class="stats-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
 
- <div class="panel">
- <div class="panel-header">
- <div class="panel-header-left">
- <span class="status-dot active"></span>
- CPU Performance
- <span style="font-size:0.65rem; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0;">— Chromium only (Chrome 125+, Edge 125+, Opera 111+)</span>
- </div>
- </div>
- <div class="stats-columns-pub" style="grid-template-columns: 1fr;">
- <div class="stats-section">
- <h3>Device CPU State</h3>
- <div id="cpu-stats"><p class="no-stats">Waiting...</p></div>
- </div>
- </div>
- </div>
+            <div class="stats-section">
+              <h3>Audio</h3>
+              <div id="pub-audio-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- </div><!-- /publisher column -->
+            <div class="stats-section">
+              <h3>Video</h3>
+              <div id="pub-video-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- <!-- ══════════════════════════════════════════
- SUBSCRIBER COLUMN
- ══════════════════════════════════════════ -->
- <div class="column">
+            <div class="stats-section">
+              <h3>Network Condition</h3>
+              <div id="pub-network-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- <!-- Subscriber video -->
- <div class="panel">
- <div class="panel-header">
- <div class="panel-header-left">
- <span id="sub-status-dot" class="status-dot"></span>
- Subscriber — Remote
- </div>
- </div>
- <div class="video-wrapper">
- <div id="subscriber"></div>
- </div>
- </div>
+            <div class="stats-section">
+              <h3>CPU Performance <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.58rem;color:#94a3b8">— Chromium only</span></h3>
+              <div id="cpu-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- <!-- Subscriber condition banner -->
- <div id="sub-condition-banner" class="condition-banner"></div>
+          </div>
+        </div>
 
- <!-- Subscriber stats: Audio | Video | Sender-Side | Network Condition -->
- <div class="panel">
- <div class="panel-header">
- <div class="panel-header-left">
- <span class="status-dot"></span>
- Subscriber Statistics
- </div>
- </div>
- <div class="stats-columns-sub">
+        <!-- Subscriber Stats tab -->
+        <div class="tab-panel" id="tab-sub">
+          <div class="stats-grid" style="grid-template-columns: 1fr 1fr 1fr;">
 
- <div class="stats-section">
- <h3>Audio</h3>
- <div id="sub-audio-stats"><p class="no-stats">Waiting...</p></div>
- </div>
+            <div class="stats-section">
+              <h3>Audio</h3>
+              <div id="sub-audio-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- <div class="stats-section">
- <h3>Video</h3>
- <div id="sub-video-stats"><p class="no-stats">Waiting...</p></div>
- </div>
+            <div class="stats-section">
+              <h3>Video</h3>
+              <div id="sub-video-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- <div class="stats-section">
- <h3>Sender-Side</h3>
- <div id="sub-sender-stats"><p class="no-stats">Waiting...</p></div>
- </div>
+            <div class="stats-section">
+              <h3>Network Condition</h3>
+              <div id="sub-network-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- <div class="stats-section">
- <h3>Network Condition</h3>
- <div id="sub-network-stats"><p class="no-stats">Waiting...</p></div>
- </div>
+          </div>
+        </div>
 
- </div>
- </div>
+        <!-- Sender-Side Stats tab -->
+        <div class="tab-panel" id="tab-sender">
+          <div class="stats-grid" style="grid-template-columns: 1fr;">
 
- </div><!-- /subscriber column -->
+            <div class="stats-section">
+              <h3>Sender-Side</h3>
+              <div id="sub-sender-stats"><p class="no-stats">Waiting...</p></div>
+            </div>
 
- </div><!-- /demo-grid -->
+          </div>
+        </div>
 
- <script type="text/javascript" src="js/config.js"></script>
- <script type="text/javascript" src="js/app.js"></script>
+      </div><!-- /drawer-body -->
+    </div><!-- /stats-drawer -->
+
+  </div><!-- /video-area -->
+
+  <script>
+    // ── Drawer open / close ──
+    const drawer    = document.getElementById('stats-drawer');
+    const toggleBtn = document.getElementById('stats-toggle-btn');
+    const closeBtn  = document.getElementById('drawer-close-btn');
+
+    function openDrawer()  { drawer.classList.add('open');    toggleBtn.classList.add('active'); }
+    function closeDrawer() { drawer.classList.remove('open'); toggleBtn.classList.remove('active'); }
+
+    toggleBtn.addEventListener('click', () =>
+      drawer.classList.contains('open') ? closeDrawer() : openDrawer()
+    );
+    closeBtn.addEventListener('click', closeDrawer);
+
+    // ── Tab switching ──
+    document.querySelectorAll('.drawer-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── Hide waiting message when subscriber connects ──
+    window.setSubscriberActive = (active) => {
+      const msg = document.getElementById('waiting-msg');
+      if (active) msg.classList.add('hidden');
+      else        msg.classList.remove('hidden');
+    };
+  </script>
+
+  <script type="text/javascript" src="js/config.js"></script>
+  <script type="text/javascript" src="js/app.js"></script>
 </body>
 </html>

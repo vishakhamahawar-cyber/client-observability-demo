@@ -186,8 +186,7 @@ function renderPublisherVideo(video) {
 
 /**
  * Renders publisher transport and network condition into #pub-network-stats.
- * Also updates the publisher condition banner.
- *
+ * Also updates the publisher condition banner. *
  * Confirmed SDK property names:
  * mediaLink.transport.connectionEstimatedBandwidth
  * mediaLink.transport.networkCondition → lowercase e.g. 'good'
@@ -505,6 +504,8 @@ function initializeSession() {
     // Mark subscriber status dot as active
     const dot = document.querySelector('#sub-status-dot');
     if (dot) dot.classList.add('active');
+    window.setSubscriberActive?.(true);
+
   });
 
   // ── Stream destroyed ──
@@ -520,6 +521,8 @@ function initializeSession() {
 
     const dot = document.querySelector('#sub-status-dot');
     if (dot) dot.classList.remove('active');
+    window.setSubscriberActive?.(false);
+
   });
 
   // ── Session disconnected ──

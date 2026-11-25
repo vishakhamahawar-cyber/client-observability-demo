@@ -280,6 +280,8 @@ function renderSubscriberVideo(video) {
     row('Bitrate', fmtBps(video.bitrate)) +
     row('Total Bitrate', fmtBps(video.totalBitrate)) +
     row('Codec', fmt(video.codec)) +
+    row('Sender Quality Restriction', badge(video.senderQualityRestriction)) +
+    row('Remote Publisher Quality Restriction', badge(video.remotePublisherQualityRestriction)) +
     row('Freeze Count', fmt(video.freezeCount)) +
     row('Freeze Duration', fmtMs(video.totalFreezesDuration)) +
     row('Pause Count', fmt(video.pauseCount)) +
@@ -384,19 +386,22 @@ function attachSubscriberNetworkEvents(subscriber) {
   // Docs confirm subscriber networkConditionChanged passes { reason, stats }
   // (NOT statsContainer). mediaLink is accessed via stats.mediaLink.
   // Ref: https://developer.vonage.com/en/video/guides/client-observability/javascript#receiving-network-condition-events-on-the-subscribers
-  subscriber.on('networkConditionChanged', ({ reason, stats }) => {
-    const ml = stats?.mediaLink;
+ subscriber.on('videoQualityChanged', (event) => {
+ console.debug('[Subscriber] videoQualityChanged', {
+ senderQualityRestriction: event?.senderQualityRestriction,
+ remotePublisherQualityRestriction: event?.remotePublisherQualityRestriction,
+ });
 
-    console.group('[Subscriber] networkConditionChanged');
-    console.log('Change Reason: ', reason);
-    console.log('Local Condition: ', ml?.transport?.networkCondition);
-    console.log('Remote Condition: ', ml?.remotePublisherTransport?.networkCondition);
-    console.log('Degradation Source: ', ml?.networkDegradationSource);
-    console.groupEnd();
+ // Fetch the latest stats so the displayed values update immediately.
+ subscriber.getStats((error, stats) => {
+ if (error) {
+ console.error('[Subscriber Video Quality]', error.message);
+ return;
+ }
 
-    renderSubscriberSenderSide(ml);
-    renderSubscriberNetwork(ml);
-  });
+ if (stats?.video) renderSubscriberVideo(stats.video);
+ });
+ });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -500,6 +505,7 @@ function initializeSession() {
 
     startSubscriberStats(subscriber);
     attachSubscriberNetworkEvents(subscriber);
+    attachSubscriberVideoQualityEvents(subscriber);
 
     // Mark subscriber status dot as active
     const dot = document.querySelector('#sub-status-dot');
